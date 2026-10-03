@@ -1,0 +1,30 @@
+name: Publish Chocolatey package
+on:
+  workflow_dispatch:
+    inputs:
+      run-id:
+        description: Validated build run containing the Chocolatey artifact
+        required: true
+        default: '37122230507'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: chocolatey
+          run-id: ${{ inputs.run-id }}
+          github-token: ${{ github.token }}
+          path: packages
+      - name: Push validated package to moderation queue
+        shell: pwsh
+        env:
+          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+        run: |
+          if (-not $env:CHOCOLATEY_API_KEY) { throw 'Publisher API key is missing' }
+          $package = Get-Item packages/chessigma.1.0.2.nupkg
+          choco push $package.FullName --source https://push.chocolatey.org/ --api-key $env:CHOCOLATEY_API_KEY --no-progress
+          if ($LASTEXITCODE) { throw 'Chocolatey push failed' }
