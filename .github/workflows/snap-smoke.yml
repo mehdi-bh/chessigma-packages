@@ -1,0 +1,37 @@
+name: Snap runtime smoke
+on:
+  workflow_dispatch:
+    inputs:
+      run-id:
+        description: Build workflow run containing the snap artifact
+        required: true
+        default: '37122230507'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: snap
+          run-id: ${{ inputs.run-id }}
+          github-token: ${{ github.token }}
+          path: built
+      - name: Launch the actual strict snap with Chromium sandbox enabled
+        run: |
+          sudo snap install --dangerous built/*.snap
+          sudo snap connect chessigma:browser-support
+          sudo snap connect chessigma:network
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          timeout --signal=KILL 25s xvfb-run snap run chessigma > /tmp/chessigma-snap.log 2>&1 || code=$?
+          cat /tmp/chessigma-snap.log
+          test "${code:-0}" = 137
+          ! grep -E 'No usable sandbox|Failed to move to new namespace|FATAL:' /tmp/chessigma-snap.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runtime-log
+          path: /tmp/chessigma-snap.log

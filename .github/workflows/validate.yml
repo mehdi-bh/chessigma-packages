@@ -65,7 +65,7 @@ jobs:
           sudo snap connect chessigma:network
           sudo apt-get update
           sudo apt-get install -y xvfb
-          timeout --signal=KILL 25s dbus-run-session -- xvfb-run snap run chessigma > /tmp/chessigma-snap.log 2>&1 || code=$?
+          timeout --signal=KILL 25s xvfb-run snap run chessigma > /tmp/chessigma-snap.log 2>&1 || code=$?
           cat /tmp/chessigma-snap.log
           test "${code:-0}" = 137
           ! grep -E 'No usable sandbox|Failed to move to new namespace|FATAL:' /tmp/chessigma-snap.log
