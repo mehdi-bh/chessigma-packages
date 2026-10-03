@@ -1,0 +1,65 @@
+name: Publish reviewed Snap
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Upload tested artifact or release an approved revision
+        type: choice
+        options: [upload, release]
+        default: upload
+      run-id:
+        description: Successful Validate packages run containing snap artifact
+        required: false
+      sha256:
+        description: Expected SHA256 of the tested artifact (required for upload)
+        required: false
+      revision:
+        description: Approved Snap Store revision (required for release)
+        required: false
+permissions:
+  contents: read
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Validate requested publication
+        env:
+          OPERATION: ${{ inputs.operation }}
+          RUN_ID: ${{ inputs.run-id }}
+          EXPECTED_SHA256: ${{ inputs.sha256 }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          if [ "$OPERATION" = upload ]; then
+            [[ "$RUN_ID" =~ ^[0-9]+$ ]]
+            [[ "$EXPECTED_SHA256" =~ ^[a-f0-9]{64}$ ]]
+          else
+            [[ "$REVISION" =~ ^[0-9]+$ ]]
+          fi
+      - uses: actions/download-artifact@v4
+        if: inputs.operation == 'upload'
+        with:
+          name: snap
+          run-id: ${{ inputs.run-id }}
+          github-token: ${{ github.token }}
+          path: tested
+      - name: Check exact previously tested package
+        if: inputs.operation == 'upload'
+        env:
+          EXPECTED_SHA256: ${{ inputs.sha256 }}
+        run: |
+          test "$(find tested -maxdepth 1 -name '*.snap' | wc -l)" = 1
+          echo "$EXPECTED_SHA256  tested/chessigma_1.0.2_amd64.snap" | sha256sum --check
+      - name: Install publisher CLI
+        run: sudo snap install snapcraft --classic
+      - name: Upload or release after Canonical approval
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+          OPERATION: ${{ inputs.operation }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          if [ "$OPERATION" = upload ]; then
+            snapcraft upload tested/chessigma_1.0.2_amd64.snap --release=stable --verbosity=brief
+          else
+            snapcraft release chessigma "$REVISION" stable --verbosity=brief
+          fi
