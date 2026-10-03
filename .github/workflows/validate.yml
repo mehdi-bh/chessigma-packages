@@ -36,13 +36,17 @@ jobs:
           cp -r aur /tmp/build
           chown -R builder:builder /tmp/build
           su builder -c 'cd /tmp/build && makepkg --printsrcinfo > .SRCINFO && makepkg --nodeps --noconfirm'
+          pacman -U --noconfirm /tmp/build/*.pkg.tar.zst
           namcap /tmp/build/*.pkg.tar.zst || true
+          if ldd /usr/lib/chessigma/chessigma-desktop | grep 'not found'; then exit 1; fi
+          ELECTRON_RUN_AS_NODE=1 /usr/bin/chessigma -e 'console.log(process.versions.electron)' 
           bsdtar -tvf /tmp/build/*.pkg.tar.zst | grep 'rws.*chrome-sandbox'
           cp /tmp/build/.SRCINFO aur/.SRCINFO
           cp /tmp/build/*.pkg.tar.zst aur/
       - uses: actions/upload-artifact@v4
         with:
           name: aur
+          include-hidden-files: true
           path: |
             aur/*.pkg.tar.zst
             aur/.SRCINFO
@@ -61,11 +65,12 @@ jobs:
           sudo snap connect chessigma:network
           sudo apt-get update
           sudo apt-get install -y xvfb
-          timeout 25s xvfb-run snap run chessigma > /tmp/chessigma-snap.log 2>&1 || code=$?
+          timeout --signal=KILL 25s dbus-run-session -- xvfb-run snap run chessigma > /tmp/chessigma-snap.log 2>&1 || code=$?
           cat /tmp/chessigma-snap.log
-          test "${code:-0}" = 124
+          test "${code:-0}" = 137
           ! grep -E 'No usable sandbox|Failed to move to new namespace|FATAL:' /tmp/chessigma-snap.log
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: snap
           path: ${{ steps.build.outputs.snap }}
