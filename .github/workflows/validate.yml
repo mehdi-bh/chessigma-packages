@@ -1,0 +1,71 @@
+name: Validate packages
+on: [push, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  chocolatey:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pack, install and uninstall actual Windows app
+        shell: pwsh
+        run: |
+          choco pack chocolatey/chessigma.nuspec --outputdirectory chocolatey
+          if ($LASTEXITCODE) { throw 'choco pack failed' }
+          choco install chessigma --version 1.0.2 --source "$env:GITHUB_WORKSPACE/chocolatey" --yes --no-progress
+          if ($LASTEXITCODE -notin @(0,3010,1641)) { throw 'choco install failed' }
+          $exe = Join-Path $env:LOCALAPPDATA 'Programs/chessigma-desktop/Chessigma.exe'
+          $installed = Get-ChildItem "$env:LOCALAPPDATA/Programs" -Filter '*.exe' -Recurse | Where-Object { $_.Name -match '^(Chessigma|chessigma-desktop)\.exe$' }
+          if (-not $installed) { throw 'Installed Chessigma executable not found' }
+          Get-Process | Where-Object { $_.ProcessName -match 'chessigma' } | Stop-Process -Force
+          choco uninstall chessigma --yes --no-progress
+          if ($LASTEXITCODE -notin @(0,3010,1641)) { throw 'choco uninstall failed' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chocolatey
+          path: chocolatey/*.nupkg
+  aur:
+    runs-on: ubuntu-latest
+    container: archlinux:base
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build PKGBUILD with upstream checksum validation
+        run: |
+          pacman -Syu --noconfirm --needed base-devel namcap
+          useradd -m builder
+          cp -r aur /tmp/build
+          chown -R builder:builder /tmp/build
+          su builder -c 'cd /tmp/build && makepkg --printsrcinfo > .SRCINFO && makepkg --nodeps --noconfirm'
+          namcap /tmp/build/*.pkg.tar.zst || true
+          bsdtar -tvf /tmp/build/*.pkg.tar.zst | grep 'rws.*chrome-sandbox'
+          cp /tmp/build/.SRCINFO aur/.SRCINFO
+          cp /tmp/build/*.pkg.tar.zst aur/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aur
+          path: |
+            aur/*.pkg.tar.zst
+            aur/.SRCINFO
+  snap:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: snapcore/action-build@v1
+        id: build
+        with:
+          path: snap
+      - name: Install and smoke-test the confined Electron executable
+        run: |
+          sudo snap install --dangerous "${{ steps.build.outputs.snap }}"
+          sudo snap connect chessigma:browser-support
+          sudo snap connect chessigma:network
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          timeout 25s xvfb-run snap run chessigma > /tmp/chessigma-snap.log 2>&1 || code=$?
+          cat /tmp/chessigma-snap.log
+          test "${code:-0}" = 124
+          ! grep -E 'No usable sandbox|Failed to move to new namespace|FATAL:' /tmp/chessigma-snap.log
+      - uses: actions/upload-artifact@v4
+        with:
+          name: snap
+          path: ${{ steps.build.outputs.snap }}

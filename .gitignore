@@ -1,0 +1,6 @@
+*.nupkg
+*.snap
+*.pkg.tar.zst
+pkg/
+src/
+*.deb

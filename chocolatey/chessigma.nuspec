@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>chessigma</id><version>1.0.2</version><title>Chessigma</title>
+    <authors>Arche Labs Ltd</authors><owners>mehdi-bh</owners>
+    <projectUrl>https://www.chessigma.com</projectUrl>
+    <packageSourceUrl>https://github.com/mehdi-bh/chessigma-packages/tree/main/chocolatey</packageSourceUrl>
+    <docsUrl>https://www.chessigma.com/download</docsUrl>
+    <bugTrackerUrl>https://github.com/mehdi-bh/chessigma-packages/issues</bugTrackerUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <summary>Chess game analysis, puzzles and opening training in a desktop app</summary>
+    <description>Chessigma provides free chess game reviews, puzzles and tools, with an optional paid AI coach. This desktop app opens the live Chessigma product in a dedicated window. Internet access is required.
+
+The Windows installer installs for the current user. The upstream app is proprietary; the MIT license in the package source repository covers only the packaging recipes.</description>
+    <tags>chess games analysis puzzles electron</tags>
+  </metadata>
+  <files><file src="tools\**" target="tools" /></files>
+</package>

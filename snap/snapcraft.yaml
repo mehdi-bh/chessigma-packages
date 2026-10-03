@@ -1,0 +1,41 @@
+name: chessigma
+base: core24
+version: '1.0.2'
+summary: Chess analysis, puzzles and opening training
+description: |
+  Chessigma offers free chess game reviews, puzzles and tools, with an
+  optional paid AI coach. The desktop app opens the live Chessigma product
+  in a dedicated window. Internet access is required.
+grade: stable
+confinement: strict
+license: Proprietary
+website: https://www.chessigma.com
+contact: mehdi@chessigma.com
+issues: https://github.com/mehdi-bh/chessigma-packages/issues
+platforms:
+  amd64:
+    build-on: [amd64]
+    build-for: [amd64]
+apps:
+  chessigma:
+    command: opt/Chessigma/chessigma-desktop --disable-setuid-sandbox
+    extensions: [gnome]
+    desktop: usr/share/applications/chessigma-desktop.desktop
+    plugs: [network, browser-support, audio-playback]
+    environment:
+      HOME: $SNAP_USER_DATA
+plugs:
+  browser-support:
+    interface: browser-support
+    allow-sandbox: true
+parts:
+  chessigma:
+    plugin: dump
+    source: https://cdn.chessigma.dev/desktop/v1.0.2/Chessigma-1.0.2-linux-amd64.deb
+    source-type: deb
+    source-checksum: sha256/69d1a02965bbdba1febb573ec5c9e3c0e453f39021b8db570e4e3d624d96c0ec
+    stage-packages: [libnss3, libnspr4, libxss1, libsecret-1-0]
+    override-prime: |
+      craftctl default
+      sed -i 's|Exec=/opt/Chessigma/chessigma-desktop %U|Exec=chessigma %U|' "$CRAFT_PRIME/usr/share/applications/chessigma-desktop.desktop"
+      sed -i 's|Icon=chessigma-desktop|Icon=${SNAP}/usr/share/icons/hicolor/512x512/apps/chessigma-desktop.png|' "$CRAFT_PRIME/usr/share/applications/chessigma-desktop.desktop"

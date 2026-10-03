@@ -1,0 +1,28 @@
+# Maintainer: Arche Labs Ltd <mehdi@chessigma.com>
+pkgname=chessigma-bin
+pkgver=1.0.2
+pkgrel=1
+pkgdesc='Chess game analysis, puzzles and opening training desktop app'
+arch=('x86_64' 'aarch64')
+url='https://www.chessigma.com'
+license=('LicenseRef-proprietary')
+depends=('gtk3' 'libnotify' 'nss' 'libxss' 'libxtst' 'xdg-utils' 'at-spi2-core' 'libsecret' 'alsa-lib')
+optdepends=('libappindicator-gtk3: system tray integration')
+provides=('chessigma-desktop')
+conflicts=('chessigma-desktop')
+options=('!strip' '!debug')
+source_x86_64=("chessigma-${pkgver}-x86_64.deb::https://cdn.chessigma.dev/desktop/v${pkgver}/Chessigma-${pkgver}-linux-amd64.deb")
+source_aarch64=("chessigma-${pkgver}-aarch64.deb::https://cdn.chessigma.dev/desktop/v${pkgver}/Chessigma-${pkgver}-linux-arm64.deb")
+sha256sums_x86_64=('69d1a02965bbdba1febb573ec5c9e3c0e453f39021b8db570e4e3d624d96c0ec')
+sha256sums_aarch64=('0285ddfd3bdcb46b8ff8f87b5f5bc32a4bdb0e94aecae843f2b15c52fb870cbf')
+
+package() {
+  bsdtar -xf "${srcdir}/data.tar.xz" -C "${pkgdir}"
+  # Debian's postinst sets this bit; makepkg does not execute Debian maintainer scripts.
+  chmod 4755 "${pkgdir}/opt/Chessigma/chrome-sandbox"
+  install -d "${pkgdir}/usr/bin"
+  ln -s /opt/Chessigma/chessigma-desktop "${pkgdir}/usr/bin/chessigma"
+  install -d "${pkgdir}/usr/share/licenses/${pkgname}"
+  install -m644 "${pkgdir}/opt/Chessigma/LICENSE.electron.txt" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE.electron.txt"
+  install -m644 "${pkgdir}/opt/Chessigma/LICENSES.chromium.html" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSES.chromium.html"
+}
