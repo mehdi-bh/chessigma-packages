@@ -1,6 +1,7 @@
 name: chessigma
 base: core24
 version: '1.0.2'
+icon: snap/gui/icon.png
 summary: Chess analysis, puzzles and opening training
 description: |
   Chessigma offers free chess game reviews, puzzles and tools, with an
@@ -38,4 +39,4 @@ parts:
     override-prime: |
       craftctl default
       sed -i 's|Exec=/opt/Chessigma/chessigma-desktop %U|Exec=chessigma %U|' "$CRAFT_PRIME/usr/share/applications/chessigma-desktop.desktop"
-      sed -i 's|Icon=chessigma-desktop|Icon=${SNAP}/usr/share/icons/hicolor/512x512/apps/chessigma-desktop.png|' "$CRAFT_PRIME/usr/share/applications/chessigma-desktop.desktop"
+      sed -i 's|Icon=chessigma-desktop|Icon=${SNAP}/usr/share/icons/hicolor/1024x1024/apps/chessigma-desktop.png|' "$CRAFT_PRIME/usr/share/applications/chessigma-desktop.desktop"

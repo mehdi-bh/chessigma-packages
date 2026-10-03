@@ -61,6 +61,10 @@ jobs:
       - name: Install and smoke-test the confined Electron executable
         run: |
           sudo snap install --dangerous "${{ steps.build.outputs.snap }}"
+          test -f /snap/chessigma/current/usr/share/icons/hicolor/1024x1024/apps/chessigma-desktop.png
+          test -f /snap/chessigma/current/meta/gui/icon.png
+          desktop_icon=$(sed -n 's/^Icon=//p' /snap/chessigma/current/usr/share/applications/chessigma-desktop.desktop)
+          test "$desktop_icon" = '${SNAP}/usr/share/icons/hicolor/1024x1024/apps/chessigma-desktop.png'
           sudo snap connect chessigma:browser-support
           sudo snap connect chessigma:network
           sudo apt-get update
