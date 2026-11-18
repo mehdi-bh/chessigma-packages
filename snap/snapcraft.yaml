@@ -19,16 +19,12 @@ platforms:
     build-for: [amd64]
 apps:
   chessigma:
-    command: opt/Chessigma/chessigma-desktop --disable-setuid-sandbox
+    command: opt/Chessigma/chessigma-desktop --no-sandbox
     extensions: [gnome]
     desktop: usr/share/applications/chessigma-desktop.desktop
     plugs: [network, browser-support, audio-playback]
     environment:
       HOME: $SNAP_USER_DATA
-plugs:
-  browser-support:
-    interface: browser-support
-    allow-sandbox: true
 parts:
   chessigma:
     plugin: dump
